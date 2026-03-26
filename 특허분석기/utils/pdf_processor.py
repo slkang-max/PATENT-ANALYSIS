@@ -73,3 +73,15 @@ def create_pdf_report(content_dict, selected_items):
             pdf.ln(10)
 
     return pdf.output()
+
+uploaded_file = st.file_uploader("특허 PDF 파일을 업로드하세요", type=['pdf'])
+
+if uploaded_file:
+    st.success(f"파일 '{uploaded_file.name}'이(가) 업로드되었습니다.")
+    
+    # 여기에 네가 만든 함수를 실행하는 버튼을 만들 수 있어.
+    if st.button("텍스트 추출 시작"):
+        # Streamlit은 업로드된 파일을 메모리에 저장하므로, 함수에 바로 전달 가능해.
+        result_text = extract_text_from_pdf(uploaded_file)
+        if result_text:
+            st.text_area("추출 결과", result_text, height=300)

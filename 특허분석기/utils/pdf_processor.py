@@ -75,6 +75,7 @@ def create_pdf_report(content_dict, selected_items):
 
     return pdf.output()
 
+
 st.title("🛡️ 특허 분석기 시스템")
 st.write("PDF 파일을 업로드하여 분석을 시작하세요.")
 

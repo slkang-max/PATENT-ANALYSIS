@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai  # 최신 라이브러리 임포트
 import re
 import os
 import streamlit as st
@@ -13,11 +13,10 @@ def get_env_api_key():
     return os.getenv("GEMINI_API_KEY")
 
 def analyze_patent(text, api_key):
-    """Gemini API를 이용한 특허 요약 분석"""
+    """최신 Gemini API를 이용한 특허 요약 분석"""
     try:
-        genai.configure(api_key=api_key)
-        # 쿼터가 더 넉넉한 안정 모델로 변경
-        model = genai.GenerativeModel('gemini-flash-latest')
+        # 클라이언트 설정
+        client = genai.Client(api_key=api_key)
         
         prompt = f"""
         다음은 특허 명세서 원문입니다. 이 내용을 바탕으로 특허의 전반적인 요약 정보를 만들어 주세요.
@@ -30,17 +29,20 @@ def analyze_patent(text, api_key):
         [명세서 원문]
         {text[:15000]}
         """
-        response = model.generate_content(prompt)
+        # 최신 호출 방식: client.models.generate_content
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt
+        )
         result_text = response.text
         return _parse_keywords(result_text)
     except Exception as e:
         return None, {"msg": str(e)}
 
 def generate_defense_strategy(text, api_key):
-    """Gemini API를 이용한 방어 및 회피 전략 도출"""
+    """최신 Gemini API를 이용한 방어 및 회피 전략 도출"""
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-flash-latest')
+        client = genai.Client(api_key=api_key)
         
         prompt = f"""
         다음은 특허 명세서 원문입니다. 이 기술에 대한 방어 전략과 회피(우회) 설계 전략을 도출해 주세요.
@@ -52,16 +54,18 @@ def generate_defense_strategy(text, api_key):
         [명세서 원문]
         {text[:15000]}
         """
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return {"msg": str(e)}
 
 def suggest_solutions(text, api_key):
-    """Gemini API를 이용한 기술 발전 방안 제시"""
+    """최신 Gemini API를 이용한 기술 발전 방안 제시"""
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-flash-latest')
+        client = genai.Client(api_key=api_key)
         
         prompt = f"""
         다음은 특허 명세서 원문입니다. 이 발명이 가진 한계점이나 단점을 극복하고, 기술적으로 더 발전시킬 수 있는 솔루션을 제안해 주세요.
@@ -73,7 +77,10 @@ def suggest_solutions(text, api_key):
         [명세서 원문]
         {text[:15000]}
         """
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return {"msg": str(e)}
@@ -81,10 +88,8 @@ def suggest_solutions(text, api_key):
 def condense_to_strategic_report(content_dict, api_key):
     """분석 결과를 전문가용 1페이지 리포트 형식으로 전략적으로 함축 요약"""
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-flash-latest')
+        client = genai.Client(api_key=api_key)
         
-        # 합친 컨텐츠 구성
         full_context = f"""
         [기본 요약 분석]
         {content_dict.get('summary', '정보 없음')}
@@ -118,10 +123,12 @@ def condense_to_strategic_report(content_dict, api_key):
         {full_context}
         """
         
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt
+        )
         res_text = response.text
         
-        # 태그별 파싱
         condensed = {
             "summary": _extract_tag_content(res_text, "SUMMARY"),
             "strategy": _extract_tag_content(res_text, "STRATEGY"),
@@ -130,7 +137,7 @@ def condense_to_strategic_report(content_dict, api_key):
         return condensed
     except Exception as e:
         print(f"Error in condensation: {e}")
-        return content_dict # 에러 발생 시 원본 반환
+        return content_dict
 
 def _extract_tag_content(text, tag):
     """특정 태그 사이의 컨텐츠 추출"""
@@ -143,11 +150,9 @@ def _extract_tag_content(text, tag):
 def _parse_keywords(result_text):
     """결과 텍스트에서 키워드 추출"""
     keywords = []
-    # **[KEYWORDS]** 또는 [KEYWORDS]: 등 LLM의 다양한 응답 포맷 대응
     match = re.search(r'\*?\*?\[KEYWORDS\]\*?\*?[:\s]*(.*?)(?:\n|$)', result_text, re.IGNORECASE)
     if match:
         keyword_str = match.group(1).replace('**', '').replace('*', '').strip()
         keywords = [k.strip() for k in keyword_str.split(',') if k.strip()]
-        # 전체 텍스트에서는 매칭된 전체 줄 제거
         result_text = result_text.replace(match.group(0), '')
     return result_text.strip(), keywords

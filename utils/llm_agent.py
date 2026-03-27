@@ -1,13 +1,15 @@
 import google.generativeai as genai
 import re
 import os
+import streamlit as st
 from dotenv import load_dotenv
 
 # .env 파일 로드
 load_dotenv(override=True)
 
 def get_env_api_key():
-    """환경 변수(.env)에서 API 키를 가져옵니다."""
+    if "GEMINI_API_KEY" in st.secrets:
+        return st.secrets["GEMINI_API_KEY"]
     return os.getenv("GEMINI_API_KEY")
 
 def analyze_patent(text, api_key):

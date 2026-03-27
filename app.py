@@ -49,7 +49,7 @@ html, body, [data-testid="stAppViewContainer"] {
     background: #ffffff !important;
     color: #2563eb !important;
     font-weight: 600;
-/* 버튼 — Sky Blue (옅은 하늘색) */
+} /* 버튼 — Sky Blue (옅은 하늘색) */
 .stButton > button {
     background: #3b82f6;
     color: #ffffff;

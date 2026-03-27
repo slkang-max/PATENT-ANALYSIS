@@ -45,14 +45,29 @@ def create_pdf_report(content_dict, selected_items, metrics_dict=None):
     pdf = FPDF()
     pdf.add_page()
     
-    # 한글 폰트 설정 (윈도우 맑은 고딕 경로)
-    font_path = r"C:\Windows\Fonts\malgun.ttf"
+    # 1. 경로 설정: 현재 파일(utils/pdf_processor.py) 기준 상위 폴더의 fonts 폴더 참조
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    font_dir = os.path.join(base_path, "..", "fonts") # 프로젝트 루트의 fonts 폴더
+    
+    font_path = os.path.join(font_dir, "malgun.ttf")
+    font_bold_path = os.path.join(font_dir, "malgunbd.ttf")
+
+    # 2. 폰트 적용 로직
     if os.path.exists(font_path):
+        # 일반체 등록
         pdf.add_font("Malgun", "", font_path)
-        pdf.add_font("MalgunBD", "", r"C:\Windows\Fonts\malgunbd.ttf") # Bold
+        
+        # 굵은체 등록 (파일이 있으면 등록, 없으면 일반체로 대체)
+        if os.path.exists(font_bold_path):
+            pdf.add_font("MalgunBD", "", font_bold_path)
+        else:
+            pdf.add_font("MalgunBD", "", font_path)
+            
         pdf.set_font("Malgun", size=11)
     else:
+        # 폰트 파일이 아예 없을 경우 (최후의 수단)
         pdf.set_font("Helvetica", size=11)
+        print("Warning: fonts 폴더 내에 malgun.ttf가 없습니다.")
 
     # 1. 헤더 (제목)
     pdf.set_font("MalgunBD", size=20)

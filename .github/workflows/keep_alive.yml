@@ -1,0 +1,79 @@
+name: Streamlit Keep Alive
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium
+
+      - name: Run Wake-up Script
+        run: |
+          python <<EOF
+          import asyncio
+          from playwright.async_api import async_playwright
+
+          async def run():
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(headless=True)
+                  context = await browser.new_context(
+                      user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                  )
+                  page = await context.new_page()
+                  
+                  url = 'https://patent-analysis-tech.streamlit.app/' 
+                  print(f"접속 시도: {url}")
+                  
+                  try:
+                      # 1. 페이지 접속
+                      await page.goto(url, wait_until='domcontentloaded', timeout=60000)
+                      print("페이지 로딩 중 (20초 대기)...")
+                      await asyncio.sleep(20)
+
+                      # 2. 버튼 찾기
+                      selectors = [
+                          "button:has-text('Yes, get this app back up!')",
+                          "button:has-text('back up')",
+                          "text=Yes, get this app back up!"
+                      ]
+                      
+                      found_btn = None
+                      for sel in selectors:
+                          btn = page.locator(sel).first
+                          if await btn.is_visible():
+                              found_btn = btn
+                              break
+                      
+                      if found_btn:
+                          print("!!! 자고 있는 앱 발견 !!! 버튼을 클릭합니다.")
+                          await found_btn.click()
+                          print("클릭 완료. 서버 가동을 위해 40초간 대기합니다.")
+                          await asyncio.sleep(40)
+                          print("깨우기 성공!")
+                      else:
+                          print("앱이 이미 깨어있거나 버튼을 찾을 수 없습니다.")
+                          # 현재 화면 확인용 (로그에 제목 출력)
+                          print(f"현재 페이지 제목: {await page.title()}")
+
+                  except Exception as e:
+                      print(f"에러 발생: {e}")
+                  finally:
+                      await browser.close()
+
+          asyncio.run(run())
+          EOF
